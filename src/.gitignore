@@ -1,0 +1,8 @@
+.vscode/
+bin/
+include/
+lib/
+pip-selfcheck.json
+share/
+__pycache__/
+.ipynb_checkpoints
