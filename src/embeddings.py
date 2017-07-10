@@ -16,16 +16,22 @@ so I think we need to do something like this:::?
 
 from dataset import RocDataset
 
-embedding_dim = 100
-embedding_path = '/media/william.hancock/d9b5fd30-e5fd-4df4-874e-58c039a3c6d5/models/glove.6B/w2v.6B.100d.txt'
+#embedding_dim = 100
+#embedding_path = '/media/william.hancock/d9b5fd30-e5fd-4df4-874e-58c039a3c6d5/models/glove.6B/w2v.6B.100d.txt'
 
 
-embedding = gensim.models.KeyedVectors.load_word2vec_format(embedding_path, binary=False)
+#embedding = gensim.models.KeyedVectors.load_word2vec_format(embedding_path, binary=False)
 # sentence = ["London", "is", "the", "capital", "of", "Great", "Britain"]
 # vectors = [model[w.lower()] for w in sentence]
 # print(vectors)
 
 dataset = RocDataset()
+(train_x, train_labels, test_x, test_labels) = dataset.shuffle_corpus()
+
+
+
+
+
 
 
 # https://stackoverflow.com/questions/35687678/using-a-pre-trained-word-embedding-word2vec-or-glove-in-tensorflow

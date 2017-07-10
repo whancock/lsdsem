@@ -4,16 +4,16 @@ from collections import Counter
 
 class Story():
 
-    def __init__(self, id, sentences, endings, ending_idx):
+    def __init__(self, story_id, sentences, endings, ending_idx):
 
-        self.id = id
+        self.sid = story_id
         self.sentences = sentences
         self.endings = endings
         self.ending_idx = ending_idx
 
 
     def __str__(self):
-        return '{} {} {} {}'.format(self.id, self.sentences, self.endings, self.ending_idx)
+        return '{} {} {} {}'.format(self.sid, self.sentences, self.endings, self.ending_idx)
 
 
     def get_tokens(self):
@@ -28,6 +28,14 @@ class Story():
 
         return tokens
 
+    def get_tokens_raw(self):
+
+        tokens = []
+
+        tokens += [self.process_sent(sent) for sent in self.sentences]
+        tokens += [self.process_sent(self.endings[self.ending_idx])]
+
+        return tokens
 
 
     def process_sent(self, sent):

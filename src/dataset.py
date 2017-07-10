@@ -1,5 +1,6 @@
 
 import csv
+import itertools
 import tensorflow as tf
 import numpy as np
 from story import Story
@@ -33,11 +34,34 @@ class RocDataset:
         # self.corpus = self.train_data + self.dev_data + self.test_data
         self.corpus = self.test_data
 
+        # read in data from CSV files
         self.extract_labels()
+        # calculate frequencies of words, also serves as mapping from word to index
         self.build_freq_dict()
+        # build a vector of the corpus for feeding into a NN
+        feats = self.extract_feats()
+        # transform words into ints
+        self.embeddings = self.embed_feats(self.token_to_id, feats)
 
-        self.shuffle_corpus()
-        self.build_embeddings()
+
+
+    def extract_feats(self):
+        """
+        the story object has more info than we need. go from story to a vector of
+        required input features for our model
+        """
+        return [story.get_tokens_raw() for story in self.corpus]
+
+
+
+    def embed_feats(self, mapping, feats):
+        """ go from words to indices based on mapping """
+
+        start_char = 1
+        index_from = 3
+
+        return np.array([ [[start_char]] + [[mapping[w] + index_from for w in sent] for sent in story] for story in feats])
+
 
 
 
@@ -48,14 +72,8 @@ class RocDataset:
         # what percentage of the data do we keep for training?
         train_ratio = .9
 
-        bodies = []
-        endings = []
-        for story in self.corpus:
-            bodies.append(story.sentences)
-            endings.append(story.endings[story.ending_idx])
-
-        bodies = np.array(bodies)
-        endings = np.array(endings)[:, np.newaxis]
+        bodies = self.embeddings[:,:5]
+        endings = np.array(self.embeddings[:,5])[:, np.newaxis]
 
 
         good_stories = np.concatenate((bodies, endings), axis=1)
@@ -63,7 +81,9 @@ class RocDataset:
         
 
         # for n times the size of the corpus, pick a story, and then give it a bad ending
-        # for idx in range(len(shuffle) * bad_ratio):
+        # this makes the assumption that we want evenly distributes bad endings
+        # each story is represented bad_ratio times and each endings is represented bad_ratio
+        # times
 
         bad_bodies = np.tile(bodies,(bad_ratio,1))
         bad_endings = np.tile(endings,(bad_ratio,1))
@@ -73,18 +93,37 @@ class RocDataset:
         bad_stories = np.concatenate((bad_bodies, bad_endings), axis=1)
         bad_stories_labels = np.zeros_like(bad_endings)
 
-        # print(bad_stories.shape)
 
         all_stories = np.vstack((good_stories, bad_stories))
         all_stories_labels = np.vstack((good_stories_labels, bad_stories_labels))
         
+        """
+        if bad ratio is 4, then we now have
+
+        [good bodies] [good endings]
+        [bad bodies] [bad endings]
+        [bad bodies] [bad endings]
+        [bad bodies] [bad endings]
+        [bad bodies] [bad endings]
+
+        """
+
+
+
+        # compress all stories into one column (I.E. we remove sentence demarcations)
+        all_stories = np.array([list(itertools.chain.from_iterable(story)) for story in all_stories])
+
+
+
+        # now shuffle them
         seed = 113
         np.random.seed(seed)
         np.random.shuffle(all_stories)
         np.random.seed(seed)
         np.random.shuffle(all_stories_labels)
 
-        # return train and test sets
+
+        # split into train and test sets
         pivot = int(train_ratio * all_stories.shape[0])
 
         train_x, test_x = np.split(all_stories, [pivot])
@@ -121,12 +160,6 @@ class RocDataset:
 
 
 
-    def build_embeddings(self):
-
-        start_char = 1
-        index_from = 3
-
-        self.numerized = [[start_char] + [self.token_to_id[w] + index_from for w in story.get_tokens()] for story in self.corpus]
 
 
 
