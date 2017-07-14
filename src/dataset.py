@@ -1,21 +1,18 @@
+from collections import Counter
 
 import csv
 import itertools
-import tensorflow as tf
 import numpy as np
 from story import Story
-from collections import Counter
+
 
 class RocDataset:
+
+    """ a class to help us use ROCStory data for machine learning """
 
     def __init__(self):
 
         self.embedding_size = 100
-
-        # self.spring_path = '/home/william.hancock/workspace/data/lsdsem/raw/rocstories_spring_2016.csv'
-        # self.winter_path = '/home/william.hancock/workspace/data/lsdsem/raw/rocstories_winter_2017.csv'
-        # self.test_path = '/home/william.hancock/workspace/data/lsdsem/raw/cloze_test_test_spring_2016.csv'
-        # self.val_path = '/home/william.hancock/workspace/data/lsdsem/raw/cloze_test_val_spring_2016.csv'
 
         self.train_path = '/home/william.hancock/workspace/data/lsdsem/ukp/train__rocstories_kde_with_features.csv'
         self.dev_path = '/home/william.hancock/workspace/data/lsdsem/ukp/dev__storycloze_valid_with_features.csv'
@@ -31,139 +28,66 @@ class RocDataset:
         self.test_data = self.parse_csv(self.test_path)
 
         # build a tensor that maps words in our data to indices
-        # self.corpus = self.train_data + self.dev_data + self.test_data
-        self.corpus = self.test_data
+        self.corpus = self.train_data + self.dev_data + self.test_data
+
+        self.build_freq_dict()
 
         # read in data from CSV files
-        self.extract_labels()
-        # calculate frequencies of words, also serves as mapping from word to index
-        self.build_freq_dict()
-        # build a vector of the corpus for feeding into a NN
-        feats = self.extract_feats()
-        # transform words into ints
-        self.embeddings = self.embed_feats(self.token_to_id, feats)
+        # self.train_labels = self.extract_labels(self.train_data)
+        # self.dev_labels = self.extract_labels(self.dev_data)
+        # self.test_labels = self.extract_labels(self.test_data)
+
+        # # build a vector of the corpus for feeding into a NN
+        # self.train_feats = self.build_word_matrix(self.train_data)
+        # self.dev_feats = self.build_word_matrix(self.dev_data)
+        # self.test_feats = self.build_word_matrix(self.test_data)
 
 
 
-    def extract_feats(self):
+    # def extract_labels(self, story_set):
+    #     return [story.ending_idx for story in self.corpus]
+
+
+
+
+    # def build_word_matrix(self, story_list):
+    #     """
+    #     the story object has more info than we need. go from story to a vector of
+    #     required input features for our model
+    #     """
+    #     return [story.get_tokens() for story in story_list]
+
+
+    def get_good_bad_split(self, story_list):
         """
-        the story object has more info than we need. go from story to a vector of
-        required input features for our model
+        split each story into its good and bad version, keeping the context and ending
+        seperate. this matches a specific NN architecture
         """
-        return [story.get_tokens_raw() for story in self.corpus]
+        context = []
+        ending = []
+        label = []
 
+        for story in story_list:
 
+            context_tokens = story.get_context_tokens()
 
-    def embed_feats(self, mapping, feats):
-        """ go from words to indices based on mapping """
+            for (idx, ending_tokens) in enumerate(story.get_tokenized_endings()):
+                context.append(context_tokens)
+                ending.append(ending_tokens)
+                label.append(int(idx==story.ending_idx))
 
-        start_char = 1
-        index_from = 3
-
-        return np.array([ [[start_char]] + [[mapping[w] + index_from for w in sent] for sent in story] for story in feats])
-
-
-
-
-    def shuffle_corpus(self):
-
-        # makes the generated bad examples n times the good ones
-        bad_ratio = 4
-        # what percentage of the data do we keep for training?
-        train_ratio = .9
-
-        bodies = self.embeddings[:,:5]
-        endings = np.array(self.embeddings[:,5])[:, np.newaxis]
-
-
-        good_stories = np.concatenate((bodies, endings), axis=1)
-        good_stories_labels = np.ones_like(endings)
+        return (np.array(context), np.array(ending), np.array(label))
         
 
-        # for n times the size of the corpus, pick a story, and then give it a bad ending
-        # this makes the assumption that we want evenly distributes bad endings
-        # each story is represented bad_ratio times and each endings is represented bad_ratio
-        # times
-
-        bad_bodies = np.tile(bodies,(bad_ratio,1))
-        bad_endings = np.tile(endings,(bad_ratio,1))
-
-        np.random.shuffle(bad_endings)
-
-        bad_stories = np.concatenate((bad_bodies, bad_endings), axis=1)
-        bad_stories_labels = np.zeros_like(bad_endings)
 
 
-        all_stories = np.vstack((good_stories, bad_stories))
-        all_stories_labels = np.vstack((good_stories_labels, bad_stories_labels))
-        
-        """
-        if bad ratio is 4, then we now have
-
-        [good bodies] [good endings]
-        [bad bodies] [bad endings]
-        [bad bodies] [bad endings]
-        [bad bodies] [bad endings]
-        [bad bodies] [bad endings]
-
-        """
-
-
-
-        # compress all stories into one column (I.E. we remove sentence demarcations)
-        all_stories = np.array([list(itertools.chain.from_iterable(story)) for story in all_stories])
-
-
-
-        # now shuffle them
-        seed = 113
-        np.random.seed(seed)
-        np.random.shuffle(all_stories)
-        np.random.seed(seed)
-        np.random.shuffle(all_stories_labels)
-
-
-        # split into train and test sets
-        pivot = int(train_ratio * all_stories.shape[0])
-
-        train_x, test_x = np.split(all_stories, [pivot])
-        train_labels, test_labels = np.split(all_stories_labels, [pivot])
-
-        return (train_x, train_labels, test_x, test_labels)
-
-
-
-
-
-
-    def extract_labels(self):
-        self.labels = [story.ending_idx for story in self.corpus]
-
-
-    
-    def build_freq_dict(self):
-
-        tokens = Counter()
-
-        for story in self.corpus:
-            tokens.update(story.get_tokens())
-
-        self.corpus_freq = tokens
-
-
-        word_to_id = {}
-
-        for idx, token in enumerate(self.corpus_freq.most_common()):
-            word_to_id[token[0]] = idx
-
-        self.token_to_id = word_to_id
-
-
-
+    def get_data_embedded(self, data, embedding):
+        return [embedding.embed(sent) for sent in data]
 
 
 
     def parse_csv(self, path):
+        """ parse the csv files """
 
         stories = []
 
@@ -192,7 +116,165 @@ class RocDataset:
 
 
 
-# we need to create a dictionary
 
 
-moo = RocDataset()
+
+    # def report_props(self):
+
+    #     maxlen = 0
+    #     for story in self.embeddings:
+    #         curlen = sum([len(sent) for sent in story])
+    #         if curlen > maxlen:
+    #             maxlen = curlen
+
+    #     vocab_size = len(self.token_to_id)
+
+    #     print("longest story:", maxlen)
+    #     print("vocab size:", vocab_size)
+
+
+
+
+    # def embed_feats(self, embedding, feats):
+    #     """ go from words to indices based on mapping """
+    #     return np.array([ [[mapping[w] + index_from for w in sent] for sent in story] for story in feats])
+
+
+
+    # def get_data(self):
+    #     """ process corpus and return test and train sets """
+
+    #     (train_base, test_base) = self.split_test_train()
+
+    #     (train_x, train_y) = self.more_neg_examples(train_base)
+    #     (test_x, test_y) = self.more_neg_examples(test_base, bad_ratio=2)
+
+    #     return (train_x, train_y, test_x, test_y)
+
+
+
+
+    # def split_test_train(self):
+
+    #     # what percentage of the data do we keep for training?
+    #     train_ratio = .9
+
+    #     # split into train and test sets
+    #     pivot = int(train_ratio * self.embeddings.shape[0])
+
+    #     return np.split(self.embeddings, [pivot])
+
+
+
+    # def more_neg_examples(self, stories, bad_ratio=4):
+
+    #     """
+    #     take as input all positive training examples (because that's what our corpus looks like)
+    #     and use this as a base to generate noise for better model fitting. bad_ratio is the ratio
+    #     of noise to signal
+    #     """
+
+    #     bodies = stories[:,:5]
+    #     endings = np.array(stories[:,5])[:, np.newaxis]
+
+
+    #     good_stories = np.concatenate((bodies, endings), axis=1)
+    #     good_stories_labels = np.ones_like(endings)
+        
+
+    #     # for n times the size of the corpus, pick a story, and then give it a bad ending
+    #     # this makes the assumption that we want evenly distributes bad endings
+    #     # each story is represented bad_ratio times and each endings is represented bad_ratio
+    #     # times
+
+    #     bad_bodies = np.tile(bodies,(bad_ratio,1))
+    #     bad_endings = np.tile(endings,(bad_ratio,1))
+
+    #     np.random.shuffle(bad_endings)
+
+    #     bad_stories = np.concatenate((bad_bodies, bad_endings), axis=1)
+    #     bad_stories_labels = np.zeros_like(bad_endings)
+
+
+    #     all_stories = np.vstack((good_stories, bad_stories))
+    #     all_stories_labels = np.vstack((good_stories_labels, bad_stories_labels))
+        
+    #     """
+    #     if bad ratio is 4, then we now have
+
+    #     [good bodies] [good endings]
+    #     [bad bodies] [bad endings]
+    #     [bad bodies] [bad endings]
+    #     [bad bodies] [bad endings]
+    #     [bad bodies] [bad endings]
+
+    #     """
+
+
+    #     # compress all stories into one column (I.E. we remove sentence demarcations)
+    #     all_stories = np.array([list(itertools.chain.from_iterable(story)) for story in all_stories])
+
+
+    #     # now shuffle them
+    #     seed = 113
+    #     np.random.seed(seed)
+    #     np.random.shuffle(all_stories)
+    #     np.random.seed(seed)
+    #     np.random.shuffle(all_stories_labels)
+
+    #     return (all_stories, all_stories_labels)
+
+
+
+    
+    def build_freq_dict(self):
+        """ 
+            purely a cosmetic thing: build a token counter to assign IDs to
+            tokens in an ordinal manner
+        """
+
+        tokens = Counter()
+
+        for story in self.corpus:
+            tokens.update(story.get_freq())
+
+        self.corpus_freq = tokens
+
+
+        word_to_id = {}
+        id_to_word = {}
+
+        for idx, token in enumerate(self.corpus_freq.most_common()):
+            word_to_id[token[0]] = idx
+            id_to_word[idx] = token[0]
+
+        self.token_to_id = word_to_id
+        self.id_to_token = id_to_word
+
+
+
+    # def validate(self, feats, labels):
+    #     """
+    #     checks to see if our int mapping worked out and the shuffling is cool by printing
+    #     out random stories from the corpus and relying on the coder to see if the label makes
+    #     sense
+    #      """
+
+    #     print(feats.shape)
+    #     print(labels.shape)
+
+    #     for idx in range(20):
+
+    #         feat = feats[idx]
+    #         label = labels[idx]
+
+    #         story = []
+
+    #         for word_idx in feat:
+    #             if word_idx >= 3:
+    #                 story.append(self.id_to_token[word_idx - 3])
+
+    #         print(' '.join(story))
+    #         print(label)
+    #         print('\n')
+

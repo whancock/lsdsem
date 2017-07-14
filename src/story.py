@@ -1,41 +1,57 @@
 import nltk
-
 from collections import Counter
 
 class Story():
 
-    def __init__(self, story_id, sentences, endings, ending_idx):
+    """
+    definitions:
+        context: the body of the story, in this case, the first four sentences
+        endings: the two possible endings for each story
 
-        self.sid = story_id
-        self.sentences = sentences
-        self.endings = endings
+    """
+
+    def __init__(self, story_id, context, endings, ending_idx):
+
+        self.story_id = story_id
+        self.sentences = context + endings
         self.ending_idx = ending_idx
+
+        self.tokenized_sentences = [self.process_sent(sent) for sent in self.sentences]
+        self.counter = Counter(self.get_all_tokens())
 
 
     def __str__(self):
-        return '{} {} {} {}'.format(self.sid, self.sentences, self.endings, self.ending_idx)
+        return '{} {} {}'.format(self.story_id, self.sentences, self.ending_idx)
 
 
-    def get_tokens(self):
+    def get_endings(self):
+        return self.sentences[-2:]
 
-        tokens = Counter()
+    def get_context(self):
+        return self.sentences[:4]
 
-        for sent in self.sentences:
-            tokens.update(self.process_sent(sent))
-        
-        for sent in self.endings:
-            tokens.update(self.process_sent(sent))
+    def get_tokenized_endings(self):
+        return self.tokenized_sentences[-2:]
 
-        return tokens
+    def get_tokenized_context(self):
+        return self.tokenized_sentences[:4]
 
-    def get_tokens_raw(self):
 
-        tokens = []
 
-        tokens += [self.process_sent(sent) for sent in self.sentences]
-        tokens += [self.process_sent(self.endings[self.ending_idx])]
+    def get_context_tokens(self):
+        return [word for sent in self.get_tokenized_context() for word in sent]
 
-        return tokens
+
+    def get_all_tokens(self):
+        return [word for sent in self.tokenized_sentences for word in sent]
+
+
+    def get_unique_tokens(self):
+        return set(self.counter.most_common())
+
+
+    def get_freq(self):
+        return self.counter
 
 
     def process_sent(self, sent):
@@ -52,12 +68,3 @@ class Story():
 
         return tokens
 
-
-
-    def is_number(self, s):
-
-        try:
-            float(s)
-            return True
-        except ValueError:
-            return False
