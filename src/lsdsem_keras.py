@@ -33,14 +33,17 @@ test_ending_embeddings = embedding.get_data_embedded(test_endings)
 train_context_embeddings_padded = sequence.pad_sequences(train_context_embeddings, maxlen=story_max_len)
 train_ending_embeddings_padded = sequence.pad_sequences(train_ending_embeddings, maxlen=story_max_len)
 
+test_context_embeddings_padded = sequence.pad_sequences(test_context_embeddings, maxlen=story_max_len)
+test_ending_embeddings_padded = sequence.pad_sequences(test_ending_embeddings, maxlen=story_max_len)
+
 
 # print('shape of train context:', train_context_embeddings_padded.shape)
 # print('shape of train endings:', train_ending_embeddings_padded.shape)
 
 
 
-context = Input(shape=(story_max_len, embedding_dim))
-ending = Input(shape=(story_max_len, embedding_dim))
+#context = Input(shape=(story_max_len, embedding_dim))
+#ending = Input(shape=(story_max_len, embedding_dim))
 
 
 context_input = Input(shape=(100,), dtype='int32')
@@ -82,4 +85,6 @@ model = Model(inputs=[context_input, ending_input], outputs=output_layer)
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 
-model.fit([train_context_embeddings_padded, train_ending_embeddings_padded], train_labels, epochs=10)
+model.fit([train_context_embeddings_padded, train_ending_embeddings_padded], 
+            train_labels, 
+            epochs=10)

@@ -29,8 +29,7 @@ class RocDataset:
 
         # build a tensor that maps words in our data to indices
         self.corpus = self.train_data + self.dev_data + self.test_data
-
-        self.build_freq_dict()
+        self.corpus_freq = self.build_freq_dict()
 
         # read in data from CSV files
         # self.train_labels = self.extract_labels(self.train_data)
@@ -48,14 +47,20 @@ class RocDataset:
     #     return [story.ending_idx for story in self.corpus]
 
 
-
-
     # def build_word_matrix(self, story_list):
     #     """
     #     the story object has more info than we need. go from story to a vector of
     #     required input features for our model
     #     """
     #     return [story.get_tokens() for story in story_list]
+
+    def count(self):
+        """ return size of corpus """
+        return len(self.corpus_freq.keys())
+
+
+    def n_features(self):
+        return 0
 
 
     def get_good_bad_split(self, story_list):
@@ -74,15 +79,41 @@ class RocDataset:
             for (idx, ending_tokens) in enumerate(story.get_tokenized_endings()):
                 context.append(context_tokens)
                 ending.append(ending_tokens)
-                label.append(int(idx==story.ending_idx))
+                # label.append(int(idx==story.ending_idx))
+                label.append([1,0] if story.ending_idx==0 else [0,1])
 
         return (np.array(context), np.array(ending), np.array(label))
         
 
 
 
-    def get_data_embedded(self, data, embedding):
-        return [embedding.embed(sent) for sent in data]
+    # def get_data_embedded(self, data, embedding):
+    #     return [embedding.embed(sent) for sent in data]
+
+
+    def build_freq_dict(self):
+        """ 
+            purely a cosmetic thing: build a token counter to assign IDs to
+            tokens in an ordinal manner
+        """
+
+        tokens = Counter()
+
+        for story in self.corpus:
+            tokens.update(story.get_freq())
+
+
+        # word_to_id = {}
+        # id_to_word = {}
+
+        # for idx, token in enumerate(tokens.most_common()):
+        #     word_to_id[token[0]] = idx
+        #     id_to_word[idx] = token[0]
+
+        # return (tokens, word_to_id, id_to_word)
+
+        return tokens
+
 
 
 
@@ -227,29 +258,7 @@ class RocDataset:
 
 
     
-    def build_freq_dict(self):
-        """ 
-            purely a cosmetic thing: build a token counter to assign IDs to
-            tokens in an ordinal manner
-        """
-
-        tokens = Counter()
-
-        for story in self.corpus:
-            tokens.update(story.get_freq())
-
-        self.corpus_freq = tokens
-
-
-        word_to_id = {}
-        id_to_word = {}
-
-        for idx, token in enumerate(self.corpus_freq.most_common()):
-            word_to_id[token[0]] = idx
-            id_to_word[idx] = token[0]
-
-        self.token_to_id = word_to_id
-        self.id_to_token = id_to_word
+    
 
 
 
