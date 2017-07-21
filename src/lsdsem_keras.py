@@ -85,6 +85,4 @@ model = Model(inputs=[context_input, ending_input], outputs=output_layer)
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 
-model.fit([train_context_embeddings_padded, train_ending_embeddings_padded], 
-            train_labels, 
-            epochs=10)
+model.fit([train_context_embeddings_padded, train_ending_embeddings_padded], train_labels, epochs=10)

@@ -39,15 +39,30 @@ class Story():
 
 
     def get_context_tokens(self):
-        return [word for sent in self.get_tokenized_context() for word in sent]
+        # return [word for sent in self.get_tokenized_context() for word in sent]
+
+        tokens = []
+
+        for sent in self.get_tokenized_context():
+            for word in sent:
+                tokens.append(word)
+
+        return tokens
 
 
     def get_all_tokens(self):
-        return [word for sent in self.tokenized_sentences for word in sent]
+
+        tokens = []
+
+        for sent in self.tokenized_sentences:
+            for word in sent:
+                tokens.append(word)
+
+        return tokens
 
 
-    def get_unique_tokens(self):
-        return set(self.counter.most_common())
+    # def get_unique_tokens(self):
+    #     return set(self.counter.most_common())
 
 
     def get_freq(self):
@@ -64,6 +79,7 @@ class Story():
 
             word = word.lower()
             # TODO: maybe some other processing here
+
             tokens.append(word)
 
         return tokens
