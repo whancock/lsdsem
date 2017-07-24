@@ -69,7 +69,3 @@ class WVEmbedding:
     def pad(self, vector, max_len):
         return np.pad(vector, (0, max_len - len(vector)), 'constant')
 
-
-
-# moo = WVEmbedding('/media/william.hancock/d9b5fd30-e5fd-4df4-874e-58c039a3c6d5/models/glove.6B/glove.6B.100d.txt')
-    

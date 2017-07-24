@@ -61,12 +61,10 @@ class Story():
         return tokens
 
 
-    # def get_unique_tokens(self):
-    #     return set(self.counter.most_common())
-
 
     def get_freq(self):
         return self.counter
+
 
 
     def process_sent(self, sent):

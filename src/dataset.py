@@ -29,7 +29,7 @@ class RocDataset:
 
         # self.train_data = self.parse_csv(self.train_path)
         dev_data_all = self.parse_csv(self.dev_path)
-        # self.test_data = self.parse_csv(self.test_path)
+        self.test_data = self.parse_csv(self.test_path)
 
 
 
