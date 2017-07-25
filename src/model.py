@@ -1,3 +1,4 @@
+import os
 import math
 import numpy as np
 import tensorflow as tf
@@ -11,6 +12,7 @@ from tensorflow.contrib.layers import xavier_initializer
 class LSDModel:
 
     __summary = None
+    checkpoint_dir = '/home/william.hancock/workspace/lsd/checkpoints'
 
     lstm_cell_size = 141
     sentence_length = 20
@@ -116,30 +118,26 @@ class LSDModel:
 
 
 
-    def train_model(self, train_examples, dev_examples):
+    def train_model(self, logger, train_examples, dev_examples):
 
-        # the model saver
+        best_val_score = 0.0
         saver = tf.train.Saver()
 
         with tf.Session() as sess:
 
-
             sess.run(tf.global_variables_initializer())
-            best_val_score = 0.0
-
+        
             for epoch in range(1, self.n_epochs + 1):
+
+                logger.info('Epoch {}'.format(epoch))
 
                 bar = _create_progress_bar('loss')
                 train_losses = []  # used to calculate the epoch train loss
                 recent_train_losses = []  # used to calculate the display loss
 
-
-
                 # only thing useful from prepare_next_epoch()
                 self.batch_i = 0
                 self.epoch_random_indices = np.random.permutation(len(train_examples))
-
-
 
                 for _ in bar(range(self.get_n_batches(train_examples))):
 
@@ -155,42 +153,67 @@ class LSDModel:
                             self.dropout_keep_prob: self.dropout_keep_prob_val
                         })
 
-
                     recent_train_losses = ([loss] + recent_train_losses)[:20]
                     train_losses.append(loss)
                     bar.dynamic_messages['loss'] = np.mean(recent_train_losses)
 
-                
 
-                correct = 0
-                bar = _create_progress_bar('score')
-
-                for i, (context, ending_one, ending_one_feats, ending_two, ending_two_feats, label) in enumerate(bar(dev_examples), start=1):
-
-                    # TODO this is not very effective. Use larger batches.
-                    predict, = sess.run([self.dev_loss], feed_dict={
-                        self.input_story_begin: [context] * 2,
-                        self.input_story_end: [ending_one, ending_two],
-                        self.dropout_keep_prob: 1.0
-                    })
-
-                    label_prediction = 0 if predict[0][0] > predict[1][0] else 1
-                    if label_prediction == label:
-                        correct += 1
-                    bar.dynamic_messages['score'] = correct / float(i)
-
-                valid_score = correct / float(len(dev_examples))
+                valid_score = self.evaluate(sess, dev_examples)
+                logger.info('valid score: {}'.format(valid_score))
 
                 if valid_score > best_val_score:
+
                     score_val = np.around(valid_score, decimals=3)
-
-
-                    model_name = "%s/%0.3f.model.ckpt" % ('/home/william.hancock/workspace/lsd/checkpoints', score_val)
-                    # logger.info('Saving the model into ', model_name)
+                    model_name = "%s/%0.3f.model.ckpt" % (self.checkpoint_dir, score_val)
                     saver.save(sess, model_name)
 
-
                     best_val_score = valid_score
+
+
+
+
+    def test_model(self, logger, test_examples):
+
+        saver = tf.train.Saver()
+
+        with tf.Session() as sess:
+
+            ckpt = tf.train.get_checkpoint_state(self.checkpoint_dir)
+            print('Checkpoint dir is', ckpt.model_checkpoint_path)
+            saver.restore(sess, ckpt.model_checkpoint_path)
+
+            # Run the model to get predictions
+            logger.info('Analyzing test data')
+            test_score = self.evaluate(sess, test_examples)
+            logger.info("Done. Result: %0.2f" % (test_score * 100.))
+
+
+
+
+    def evaluate(self, sess, examples):
+
+        correct = 0
+        total = len(examples)
+
+        for idx, (beginning_vecs, ending_1_vecs, ending_1_features, ending_2_vecs, ending_2_features,label) in enumerate(examples, start=1):
+
+            predict, = sess.run([self.dev_loss], feed_dict = {
+                self.input_story_begin: [beginning_vecs] * 2,
+                self.input_story_end: [ending_1_vecs, ending_2_vecs],
+                # model.input_features: [ending_1_features, ending_2_features],
+                self.dropout_keep_prob: 1.0
+            })
+
+            prediction = 0 if predict[0][0] > predict[1][0] else 1
+
+            if prediction == label:
+                correct += 1
+
+
+        val_score = correct / float(total)
+
+        return val_score
+
 
 
 

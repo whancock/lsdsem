@@ -40,7 +40,7 @@ class RocDataset:
 
 
         # build a tensor that maps words in our data to indices
-        self.corpus = self.train_data + self.dev_data
+        self.corpus = self.train_data + self.dev_data + self.test_data
         self.corpus_freq = self.build_freq_dict()
 
 
