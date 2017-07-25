@@ -46,8 +46,8 @@ class Moo:
         model = LSDModel(data, embedding)
         governor = Governor(logger, model)
 
-        # governor.train_model(train_examples, dev_examples)
-        governor.test_model(test_examples)
+        governor.train_model(train_examples, dev_examples)
+        # governor.test_model(test_examples)
 
 
 

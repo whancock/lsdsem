@@ -6,13 +6,9 @@ from util import non_zero_tokens
 
 class LSDModel:
 
-    __summary = None
-    checkpoint_dir = '/home/william.hancock/workspace/lsd/checkpoints'
-
     LSTM_CELL_SIZE = 141
     SENTENCE_LENGTH = 20
     TRAINABLE_EMBEDDINGS = False
-
 
     def __init__(self, data, embedding):
 

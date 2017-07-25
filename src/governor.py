@@ -8,6 +8,10 @@ from util import _create_progress_bar
 
 class Governor:
 
+    """
+    responsible for controlling training and testing
+    """
+
     N_EPOCHS = 30
     BATCHSIZE = 40
     CHECKPOINT_DIR = '/home/william.hancock/workspace/lsd/checkpoints'
@@ -20,35 +24,34 @@ class Governor:
         self.logger = logger
         self.model = model
 
+        self.saver = tf.train.Saver()
+
 
 
     def train_model(self, train_examples, dev_examples):
 
         best_val_score = 0.0
-        saver = tf.train.Saver()
 
         with tf.Session() as sess:
 
             sess.run(tf.global_variables_initializer())
             summary_moo = tf.summary.merge_all(key='summaries')
         
-            for epoch in range(1, self.N_EPOCHS + 1):
+            for epoch in range(self.N_EPOCHS):
 
                 self.logger.info('Epoch {}'.format(epoch))
-
-                bar = _create_progress_bar('loss')
+                
                 train_losses = []  # used to calculate the epoch train loss
                 recent_train_losses = []  # used to calculate the display loss
 
-                # only thing useful from prepare_next_epoch()
-                self.batch_i = 0
-                self.epoch_random_indices = np.random.permutation(len(train_examples))
+                progress_bar = _create_progress_bar('loss')
+                indices = np.random.permutation(len(train_examples))
 
-                for _ in bar(range(self.get_n_batches(train_examples))):
+                for batch_idx in progress_bar(range(self.get_n_batches(train_examples))):
 
-                    train_story_begin, train_story_end, train_story_end_feats, train_label = self.get_next_batch(train_examples)
+                    train_story_begin, train_story_end, _, train_label = self.get_next_batch(train_examples, indices, batch_idx)
 
-                    _, loss, loss_individual, summary = sess.run(
+                    _, loss, _, _ = sess.run(
                         [self.model.train, self.model.train_loss, self.model.loss_individual, summary_moo],
                         feed_dict={
                             self.model.learning_rate: self.EPOCH_LEARNING_RATE,
@@ -60,7 +63,7 @@ class Governor:
 
                     recent_train_losses = ([loss] + recent_train_losses)[:20]
                     train_losses.append(loss)
-                    bar.dynamic_messages['loss'] = np.mean(recent_train_losses)
+                    progress_bar.dynamic_messages['loss'] = np.mean(recent_train_losses)
 
 
                 valid_score = self.evaluate(sess, dev_examples)
@@ -70,7 +73,7 @@ class Governor:
 
                     score_val = np.around(valid_score, decimals=3)
                     model_name = "%s/%0.3f.model.ckpt" % (self.CHECKPOINT_DIR, score_val)
-                    saver.save(sess, model_name)
+                    self.saver.save(sess, model_name)
 
                     best_val_score = valid_score
 
@@ -79,13 +82,10 @@ class Governor:
 
     def test_model(self, test_examples):
 
-        saver = tf.train.Saver()
-
         with tf.Session() as sess:
 
             ckpt = tf.train.get_checkpoint_state(self.CHECKPOINT_DIR)
-            print('Checkpoint dir is', ckpt.model_checkpoint_path)
-            saver.restore(sess, ckpt.model_checkpoint_path)
+            self.saver.restore(sess, ckpt.model_checkpoint_path)
 
             # Run the model to get predictions
             self.logger.info('Analyzing test data')
@@ -100,7 +100,7 @@ class Governor:
         correct = 0
         total = len(examples)
 
-        for idx, (beginning_vecs, ending_1_vecs, ending_1_features, ending_2_vecs, ending_2_features,label) in enumerate(examples, start=1):
+        for (beginning_vecs, ending_1_vecs, _, ending_2_vecs, _, label) in examples:
 
             predict, = sess.run([self.model.dev_loss], feed_dict = {
                 self.model.input_story_begin: [beginning_vecs] * 2,
@@ -127,14 +127,13 @@ class Governor:
 
 
 
-    def get_next_batch(self, examples):
+    def get_next_batch(self, examples, indices, batch_idx):
         """We just return the next batch data here
 
         :return: story beginning, story end, label
         :rtype: list, list, list
         """
-        indices = self.epoch_random_indices[self.batch_i * self.BATCHSIZE: (self.batch_i + 1) * self.BATCHSIZE]
-        data = [examples[i] for i in indices]
+        batch_indices = indices[batch_idx * self.BATCHSIZE: (batch_idx + 1) * self.BATCHSIZE]
+        data = [examples[i] for i in batch_indices]
         batch_story_begin, batch_story_end, batch_story_end_feats, batch_label = zip(*data)
-        self.batch_i += 1
         return batch_story_begin, batch_story_end, batch_story_end_feats, batch_label
