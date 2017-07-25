@@ -5,8 +5,6 @@ import itertools
 import numpy as np
 from story import Story
 
-from keras.preprocessing import sequence
-
 class RocDataset:
 
     """ a class to help us use ROCStory data for machine learning """
@@ -53,8 +51,11 @@ class RocDataset:
 
     def get_good_bad_split(self, embedding, story_list):
         """
-        split each story into its good and bad version, keeping the context and ending
-        seperate. this matches a specific NN architecture
+        take each story and generate two training examples from it:
+
+        story_body      ending_one      ending_one_features     ending_one_label
+        story_body      ending_two      ending_two_features     ending_two_label
+        ...
         """
 
         examples = []
@@ -76,6 +77,14 @@ class RocDataset:
 
 
     def get_dev_repr(self, embedding, story_list):
+
+        """
+        generate one example from each story
+
+        story_body  ending_one  ending_one_feats    ending_two  ending_two_feats    correct_label
+        ...
+
+        """
 
         examples = []
 

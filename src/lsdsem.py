@@ -5,13 +5,9 @@ import numpy as np
 import tensorflow as tf
 
 from model import LSDModel
+from governor import Governor
 from dataset import RocDataset
 from embedding import WVEmbedding
-
-# import numpy as np
-
-# np.random.seed = 1234
-# tf.seed = 1234
 
 
 class Moo:
@@ -19,8 +15,8 @@ class Moo:
     def __init__(self):
 
 
-        # np.random.seed(1234)
-        # tf.set_random_seed(1234)
+        np.random.seed(1234)
+        tf.set_random_seed(1234)
 
 
         # setup a logger
@@ -47,11 +43,12 @@ class Moo:
         test_examples = data.get_dev_repr(embedding, data.test_data)
 
 
-
         model = LSDModel(data, embedding)
+        governor = Governor(logger, model)
 
-        # model.train_model(logger, train_examples, dev_examples)
-        model.test_model(logger, test_examples)
+        # governor.train_model(train_examples, dev_examples)
+        governor.test_model(test_examples)
+
 
 
 
