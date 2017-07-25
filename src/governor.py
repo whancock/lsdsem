@@ -49,7 +49,7 @@ class Governor:
 
                 for batch_idx in progress_bar(range(self.get_n_batches(train_examples))):
 
-                    train_story_begin, train_story_end, _, train_label = self.get_next_batch(train_examples, indices, batch_idx)
+                    train_story_begin, train_story_end, _, train_story_end_two, _, train_label = self.get_next_batch(train_examples, indices, batch_idx)
 
                     _, loss, _, _ = sess.run(
                         [self.model.train, self.model.train_loss, self.model.loss_individual, summary_moo],
@@ -57,6 +57,8 @@ class Governor:
                             self.model.learning_rate: self.EPOCH_LEARNING_RATE,
                             self.model.input_story_begin: train_story_begin,
                             self.model.input_story_end: train_story_end,
+                            self.model.input_story_begin_two: train_story_begin,
+                            self.model.input_story_end_two: train_story_end_two,
                             self.model.input_label: train_label,
                             self.model.dropout_keep_prob: self.DROPOUT_KEEP_PROB_VAL
                         })
@@ -105,13 +107,15 @@ class Governor:
             predict, = sess.run([self.model.dev_loss], feed_dict = {
                 self.model.input_story_begin: [beginning_vecs] * 2,
                 self.model.input_story_end: [ending_1_vecs, ending_2_vecs],
+                self.model.input_story_begin_two: [beginning_vecs] * 2,
+                self.model.input_story_end_two: [ending_2_vecs, ending_1_vecs],
                 # model.input_features: [ending_1_features, ending_2_features],
                 self.model.dropout_keep_prob: 1.0
             })
 
             prediction = 0 if predict[0][0] > predict[1][0] else 1
 
-            if prediction == label:
+            if prediction == label[1]:
                 correct += 1
 
 
@@ -135,5 +139,5 @@ class Governor:
         """
         batch_indices = indices[batch_idx * self.BATCHSIZE: (batch_idx + 1) * self.BATCHSIZE]
         data = [examples[i] for i in batch_indices]
-        batch_story_begin, batch_story_end, batch_story_end_feats, batch_label = zip(*data)
-        return batch_story_begin, batch_story_end, batch_story_end_feats, batch_label
+        batch_story_begin, batch_story_end, batch_story_end_feats, batch_story_end_two, batch_story_end_two_feats, batch_label = zip(*data)
+        return batch_story_begin, batch_story_end, batch_story_end_feats, batch_story_end_two, batch_story_end_two_feats, batch_label

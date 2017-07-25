@@ -26,6 +26,14 @@ class LSDModel:
         self.dropout_keep_prob = tf.placeholder(tf.float32)
 
 
+
+
+        self.input_story_begin_two = tf.placeholder(tf.int32, [None, self.SENTENCE_LENGTH * 4])
+        self.input_story_end_two = tf.placeholder(tf.int32, [None, self.SENTENCE_LENGTH])
+
+
+
+
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
             embeddings_init = tf.constant_initializer(self.embedding.idx_to_embedding)
             embeddings_weight = tf.get_variable("embeddings", 
@@ -36,6 +44,9 @@ class LSDModel:
 
             self.embeddings_story_begin = tf.nn.embedding_lookup(embeddings_weight, self.input_story_begin)
             self.embeddings_story_end = tf.nn.embedding_lookup(embeddings_weight, self.input_story_end)
+            
+            self.embeddings_story_begin_two = tf.nn.embedding_lookup(embeddings_weight, self.input_story_begin_two)
+            self.embeddings_story_end_two = tf.nn.embedding_lookup(embeddings_weight, self.input_story_end_two)
 
 
 
@@ -65,13 +76,36 @@ class LSDModel:
             self.dropout_keep_prob
         )
 
-        concatenated = tf.concat([beginning_lstm, ending_lstm], 1)
+
+
+        beginning_lstm_two = tf.nn.dropout(
+            self.apply_lstm(
+                self.embeddings_story_begin_two,
+                self.input_story_begin_two,
+                re_use_lstm=True
+            ),
+            self.dropout_keep_prob
+        )
+
+        ending_lstm_two = tf.nn.dropout(
+            self.apply_lstm(
+                self.embeddings_story_end_two,
+                self.input_story_end_two,
+                re_use_lstm=True
+            ),
+            self.dropout_keep_prob
+        )
+
+
+
+
+        concatenated = tf.concat([beginning_lstm, ending_lstm, beginning_lstm_two, ending_lstm_two], 1)
 
         # self.LSTM_CELL_SIZE * 2 * 2:
         # the first multiplier "2" is because it is a bi-directional LSTM model (hence we have 2 LSTMs).
         #  The second "2" is because we feed the story context and an ending * separately *, thus
         # obtaining two outputs from the LSTM.
-        dense_1_W = tf.get_variable('dense_1_W', shape=[self.LSTM_CELL_SIZE * 2 * 2, self.LSTM_CELL_SIZE], initializer=xavier_initializer())
+        dense_1_W = tf.get_variable('dense_1_W', shape=[self.LSTM_CELL_SIZE * 2 * 4, self.LSTM_CELL_SIZE], initializer=xavier_initializer())
         dense_1_b = tf.get_variable('dense_1_b', shape=[self.LSTM_CELL_SIZE], initializer=tf.constant_initializer(.1))
 
         dense_2_W = tf.get_variable('dense_2_W', shape=[self.LSTM_CELL_SIZE, 2], initializer=xavier_initializer())
@@ -102,7 +136,7 @@ class LSDModel:
 
 
 
-    def apply_lstm(self, item, indices, re_use_lstm):
+    def apply_lstm(self, embedding, indices, re_use_lstm):
         """Creates a representation graph which retrieves a text item (represented by its word embeddings) and returns
         a vector-representation
 
@@ -115,10 +149,10 @@ class LSDModel:
         sequence_length = tf.to_int64(tf.reduce_sum(tensor_non_zero_token, 1))
 
         with tf.variable_scope('lstm', reuse=re_use_lstm):
-            output, last_state = tf.nn.bidirectional_dynamic_rnn(
+            _, last_state = tf.nn.bidirectional_dynamic_rnn(
                 self.lstm_cell_forward,
                 self.lstm_cell_backward,
-                item,
+                embedding,
                 dtype=tf.float32,
                 sequence_length=sequence_length
             )

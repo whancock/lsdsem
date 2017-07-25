@@ -97,7 +97,7 @@ class RocDataset:
             ending_one_embedded = embedding.embed(ending_one, 20)
             ending_two_embedded = embedding.embed(ending_two, 20)
 
-            label = story.ending_idx
+            label = [1,0] if story.ending_idx==0 else [0,1]
 
             examples.append((context_embedded, ending_one_embedded, [None], ending_two_embedded, [None], label))
 
