@@ -1,8 +1,8 @@
+""" reads a corpus """
+
 from collections import Counter
 
 import csv
-import itertools
-import numpy as np
 from story import Story
 
 class RocDataset:
@@ -25,20 +25,19 @@ class RocDataset:
 
     def load_data(self):
 
-        # self.train_data = self.parse_csv(self.train_path)
-        dev_data_all = self.parse_csv(self.dev_path)
-        self.test_data = self.parse_csv(self.test_path)
+        train_data = self.parse_csv(self.train_path)
+        dev_data = self.parse_csv(self.dev_path)
+        
 
+        # take a subset of train
+        train_pivot = int(len(train_data) * .05)
+        self.train_data = train_data[:train_pivot]
 
-
-        # split dev data into train/dev
-        pivot = int(len(dev_data_all) * .85)
-        self.train_data = dev_data_all[:pivot]
-        self.dev_data = dev_data_all[pivot:]
-
+        dev_pivot = int(len(dev_data) * .1)
+        self.dev_data = dev_data[:dev_pivot]
 
         # build a tensor that maps words in our data to indices
-        self.corpus = self.train_data + self.dev_data + self.test_data
+        self.corpus = self.train_data + self.dev_data
         self.corpus_freq = self.build_freq_dict()
 
 

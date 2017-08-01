@@ -60,16 +60,13 @@ class WVEmbedding:
         self.word_to_embedding = word_to_embedding
         self.word_to_idx = word_to_idx
 
-
-        # self.model = gensim.models.KeyedVectors.load_word2vec_format(self.data_path)
-        # self.embedding_dim = self.model.vector_size
-
         
 
     def setup_vocab(self):
-
-        # there may be words in our corpus that we didn't see in the word2vec model
-        # so we need to map them to the OOV vector
+        """
+        there may be words in our corpus that we didn't see in the word2vec model
+        so we need to map them to the OOV vector
+        """
 
         for word in self.corpus.get_vocab():
             if not word in self.word_to_idx:
@@ -81,19 +78,14 @@ class WVEmbedding:
     def vocab_size(self):
         return len(self.idx_to_embedding)
 
-
     def word_embedding(self, word):
         return self.word_to_embedding[word]
-
 
     def word_index(self, word):
         return self.word_to_idx[word]
 
-
     def embed(self, word_list, max_len):
         return self.pad(np.array([self.word_index(word) for word in word_list]), max_len)
-
-
 
     def pad(self, vector, max_len):
         return np.pad(vector, (0, max_len - len(vector)), 'constant')
