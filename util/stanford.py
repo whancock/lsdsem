@@ -13,7 +13,6 @@ from os.path import join, isfile, basename
 SCRIPT_DIR = '/home/william.hancock/workspace/lib/stanford-corenlp-full-2017-06-09'
 
 TMP_DIR = '/home/william.hancock/workspace/data/lsdsem/tmp'
-# INPUT_DIR = '/home/william.hancock/workspace/data/lsdsem/endings_raw_txt'
 OUTPUT_DIR = '/home/william.hancock/workspace/data/lsdsem/tmp/stanford'
 
 

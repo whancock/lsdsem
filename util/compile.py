@@ -9,8 +9,6 @@ import csv
 from os.path import join, basename
 
 import stanford
-
-
 from csv_to_text import csv_to_text
 
 
@@ -28,7 +26,8 @@ for label, _ in FILES:
 
 
 def main():
-    
+
+    """ wrangle features from different sources and compile into csv files """
 
     # take the UKP files which are csv and extract the text we need into text files
     # so that we can run command lines parsers like stanford
@@ -38,7 +37,7 @@ def main():
     stanford_feats = stanford.parse(text_files)
     add_feats(stanford_feats)
 
-    
+
 
     # take our features and write to OUT_DIR
     write_feats()
@@ -49,7 +48,8 @@ def main():
 
 def write_feats():
 
-    # augment existing csv files with our new features and output to new dir
+    """ augment existing csv files with our new features and output to new dir """
+
     for tag, fname in FILES:
 
         cur_feats = FILE_TO_FEATS[tag]
@@ -69,7 +69,7 @@ def write_feats():
 
 
             for idx, row in enumerate(reader):
-                if(row):
+                if row:
                     row_slice = row[:8]
                     for _, feat in cur_feats:
                         row_slice.append(feat[idx])
