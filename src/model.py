@@ -172,7 +172,7 @@ class LSDModel:
         with tf.variable_scope(scope, reuse=reuse_lstm):
 
             # if reuse_lstm:
-            #     scope.reuse_variables()
+            #     cscope.reuse_variables()
 
             _, last_state = tf.nn.bidirectional_dynamic_rnn(
                 fw,

@@ -11,11 +11,6 @@ class RocDataset:
 
     def __init__(self):
 
-        # self.train_path = '/home/william.hancock/workspace/data/lsdsem/smalltest/train__rocstories_kde_with_features.csv'
-        # self.dev_path = '/home/william.hancock/workspace/data/lsdsem/smalltest/dev__storycloze_valid_with_features.csv'
-        # self.test_path = '/home/william.hancock/workspace/data/lsdsem/ukp/test__storycloze_test_with_features.csv'
-        
-        
         self.train_path = '/home/william.hancock/workspace/data/lsdsem/ukp/train__rocstories_kde_with_features.csv'
         self.dev_path = '/home/william.hancock/workspace/data/lsdsem/ukp/dev__storycloze_valid_with_features.csv'
         self.test_path = '/home/william.hancock/workspace/data/lsdsem/ukp/test__storycloze_test_with_features.csv'
