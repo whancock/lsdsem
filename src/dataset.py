@@ -11,25 +11,31 @@ class RocDataset:
 
     def __init__(self):
 
-        self.train_path = '/home/william.hancock/workspace/data/lsdsem/ukp/train__rocstories_kde_with_features.csv'
-        self.dev_path = '/home/william.hancock/workspace/data/lsdsem/ukp/dev__storycloze_valid_with_features.csv'
-        self.test_path = '/home/william.hancock/workspace/data/lsdsem/ukp/test__storycloze_test_with_features.csv'
+        # self.train_path = '/home/william.hancock/workspace/data/lsdsem/ukp/train_rocstories_kde.csv'
+        self.dev_path = '/home/william.hancock/workspace/data/lsdsem/compiled/dev_storycloze.csv'
+        self.test_path = '/home/william.hancock/workspace/data/lsdsem/compiled/test_storycloze.csv'
 
         self.load_data()
 
 
     def load_data(self):
 
-        train_data = self.parse_csv(self.train_path)
+        # train_data = self.parse_csv(self.train_path)
         dev_data = self.parse_csv(self.dev_path)
+        test_data = self.parse_csv(self.test_path)
         
 
         # take a subset of train
-        train_pivot = int(len(train_data) * .05)
-        self.train_data = train_data[:train_pivot]
+        # train_pivot = int(len(train_data) * .05)
+        self.train_data = dev_data # [:train_pivot]
 
-        dev_pivot = int(len(dev_data) * .1)
-        self.dev_data = dev_data[:dev_pivot]
+        # dev_pivot = int(len(dev_data) * .1)
+        self.dev_data = test_data # [:dev_pivot]
+
+
+
+
+
 
         # build a tensor that maps words in our data to indices
         self.corpus = self.train_data + self.dev_data
@@ -93,7 +99,7 @@ class RocDataset:
 
             label = [1,0] if story.ending_idx==0 else [0,1]
 
-            examples.append((context_embedded, ending_one_embedded, [None], ending_two_embedded, [None], label))
+            examples.append((context_embedded, ending_one_embedded, story.get_end_one_feats(), ending_two_embedded, story.get_end_two_feats(), label))
 
         return examples
 
@@ -130,9 +136,8 @@ class RocDataset:
 
             reader = csv.reader(csvfile, delimiter=',', quotechar='"')
             header = next(reader)
-            num_elems = len(header)
 
-            for row in list(reader):
+            for row in reader:
 
                 story_id = row[0]
                 sentences = []
@@ -144,7 +149,19 @@ class RocDataset:
 
                 correct_ending_idx = int(row[7]) - 1
 
-                stories.append(Story(story_id, sentences, potential_endings, correct_ending_idx))
+                end_one_feats = []
+                end_two_feats = []
+
+                if len(row) > 8:
+                    for idx in range(8, len(header)):
+                        if 'e1' in header[idx]:
+                            end_one_feats.append(float(row[idx]))
+                        elif 'e2' in header[idx]:
+                            end_two_feats.append(float(row[idx]))
+
+                end_feats = (end_one_feats, end_two_feats)
+
+                stories.append(Story(story_id, sentences, potential_endings, end_feats, correct_ending_idx))
 
 
         return stories

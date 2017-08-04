@@ -5,6 +5,8 @@ import numpy as np
 import tensorflow as tf
 
 from model import LSDModel
+from trimodel import LSDTriModel
+
 from governor import Governor
 from dataset import RocDataset
 from embedding import WVEmbedding
@@ -46,7 +48,7 @@ def run():
     logger.info('validating on {} examples'.format(len(dev_examples)))
 
 
-    model = LSDModel(data, embedding)
+    model = LSDTriModel(data, embedding)
     governor = Governor(logger, model)
 
     governor.train_model(train_examples, dev_examples)

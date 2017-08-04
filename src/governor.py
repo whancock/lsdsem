@@ -16,9 +16,6 @@ class Governor:
     BATCHSIZE = 40
     CHECKPOINT_DIR = '/home/william.hancock/workspace/lsd/checkpoints'
 
-    EPOCH_LEARNING_RATE = .0001
-    DROPOUT_KEEP_PROB_VAL = .7
-
     def __init__(self, logger, model):
 
         self.logger = logger
@@ -49,19 +46,8 @@ class Governor:
 
                 for batch_idx in progress_bar(range(self.get_n_batches(train_examples))):
 
-                    train_story_begin, train_story_end, _, train_story_end_two, _, train_label = self.get_next_batch(train_examples, indices, batch_idx)
-
-                    _, loss, _, _ = sess.run(
-                        [self.model.train, self.model.train_loss, self.model.loss_individual, summary_moo],
-                        feed_dict={
-                            self.model.learning_rate: self.EPOCH_LEARNING_RATE,
-                            self.model.input_story_begin: train_story_begin,
-                            self.model.input_story_end: train_story_end,
-                            self.model.input_story_begin_two: train_story_begin,
-                            self.model.input_story_end_two: train_story_end_two,
-                            self.model.input_label: train_label,
-                            self.model.dropout_keep_prob: self.DROPOUT_KEEP_PROB_VAL
-                        })
+                    batch = self.get_next_batch(train_examples, indices, batch_idx)
+                    _, loss, _, _ = self.model.train_batch(sess, batch, summary_moo)
 
                     recent_train_losses = ([loss] + recent_train_losses)[:20]
                     train_losses.append(loss)
@@ -102,18 +88,12 @@ class Governor:
         correct = 0
         total = len(examples)
 
-        for (beginning_vecs, ending_1_vecs, _, ending_2_vecs, _, label) in examples:
+        for example in examples:
 
-            predict, = sess.run([self.model.dev_loss], feed_dict = {
-                self.model.input_story_begin: [beginning_vecs] * 2,
-                self.model.input_story_end: [ending_1_vecs, ending_2_vecs],
-                self.model.input_story_begin_two: [beginning_vecs] * 2,
-                self.model.input_story_end_two: [ending_2_vecs, ending_1_vecs],
-                # model.input_features: [ending_1_features, ending_2_features],
-                self.model.dropout_keep_prob: 1.0
-            })
+            predict, = self.model.predict(sess, example)
 
-            prediction = 0 if predict[0][0] > predict[1][0] else 1
+            label = example[5]
+            prediction = 0 if predict[0][0] > predict[0][1] else 1
 
             if prediction == label[1]:
                 correct += 1
@@ -139,5 +119,6 @@ class Governor:
         """
         batch_indices = indices[batch_idx * self.BATCHSIZE: (batch_idx + 1) * self.BATCHSIZE]
         data = [examples[i] for i in batch_indices]
-        batch_story_begin, batch_story_end, batch_story_end_feats, batch_story_end_two, batch_story_end_two_feats, batch_label = zip(*data)
-        return batch_story_begin, batch_story_end, batch_story_end_feats, batch_story_end_two, batch_story_end_two_feats, batch_label
+        context, end_one, end_one_feats, end_two, end_two_feats, label = zip(*data)
+
+        return context, end_one, end_one_feats, end_two, end_two_feats, label

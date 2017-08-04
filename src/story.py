@@ -10,10 +10,11 @@ class Story():
 
     """
 
-    def __init__(self, story_id, context, endings, ending_idx):
+    def __init__(self, story_id, context, endings, end_feats, ending_idx):
 
         self.story_id = story_id
         self.sentences = context + endings
+        self.end_feats = end_feats
         self.ending_idx = ending_idx
 
         self.tokenized_sentences = [self.process_sent(sent) for sent in self.sentences]
@@ -36,6 +37,12 @@ class Story():
     def get_tokenized_context(self):
         return self.tokenized_sentences[:4]
 
+
+    def get_end_one_feats(self):
+        return self.end_feats[0]
+
+    def get_end_two_feats(self):
+        return self.end_feats[1]
 
 
     def get_context_tokens(self):
