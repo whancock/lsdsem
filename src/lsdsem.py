@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import tensorflow as tf
 
+from ukpmodel import UKPModel
 from model import LSDModel
 from trimodel import LSDTriModel
 

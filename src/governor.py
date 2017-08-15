@@ -27,6 +27,8 @@ class Governor:
 
     def train_model(self, train_examples, dev_examples):
 
+        """ trains our model on train_examples, prints out validation on dev_examples """
+
         best_val_score = 0.0
 
         with tf.Session() as sess:
@@ -70,6 +72,8 @@ class Governor:
 
     def test_model(self, test_examples):
 
+        """ read in the last *best* checkpoint and evaluate on the list of test_examples """
+
         with tf.Session() as sess:
 
             ckpt = tf.train.get_checkpoint_state(self.CHECKPOINT_DIR)
@@ -84,6 +88,11 @@ class Governor:
 
 
     def evaluate(self, sess, examples):
+
+        """
+        shared between valid/test
+        takes a list of examples and uses the current model to predict
+         """
 
         correct = 0
         total = len(examples)
