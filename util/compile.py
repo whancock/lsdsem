@@ -6,9 +6,11 @@ we will read this file with tensorflow
 """
 
 import csv
+from collections import defaultdict
 from os.path import join, basename
 
 import stanford
+import features
 from csv_to_text import csv_to_text
 
 
@@ -33,14 +35,27 @@ def main():
     # so that we can run command lines parsers like stanford
     text_files = csv_to_text(FILES)
 
+    tokenized_text_files = csv_to_text(FILES, tokenize=True)
+
     # run files through corenlp
-    stanford_feats = stanford.parse(text_files)
-    add_feats(stanford_feats)
+    # stanford_feats = stanford.parse(text_files)
+    # add_feats(stanford_feats)
+
+
+
+    # for a lot of the features we want to calc, we need to do a comparison
+    # between the two endings. tokenized_text_files is just a list of files, 
+    # so we need to re-cluster them based on the metadata
+    fset = defaultdict(dict)
+    [fset[finfo[0][0]].update({finfo[0][1]: finfo[1]}) for finfo in tokenized_text_files]
+
+
+    custom_feats = features.parse(fset)
 
 
 
     # take our features and write to OUT_DIR
-    write_feats()
+    # write_feats()
 
     
 
