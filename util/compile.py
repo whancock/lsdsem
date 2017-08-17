@@ -38,14 +38,14 @@ def main():
     tokenized_text_files = csv_to_text(FILES, tokenize=True)
 
     # run files through corenlp
-    # stanford_feats = stanford.parse(text_files)
-    # add_feats(stanford_feats)
+    stanford_feats = stanford.parse(text_files)
+    add_feats(stanford_feats)
 
 
 
     # for a lot of the features we want to calc, we need to do a comparison
     # between the two endings. tokenized_text_files is just a list of files, 
-    # so we need to re-cluster them based on the metadata
+    # so we need to re-cluster them using the metadata tuple
     fset = defaultdict(dict)
     [fset[finfo[0][0]].update({finfo[0][1]: finfo[1]}) for finfo in tokenized_text_files]
 
@@ -53,15 +53,14 @@ def main():
     custom_feats = features.parse(fset)
 
 
-
     # take our features and write to OUT_DIR
-    # write_feats()
+    write_feats(custom_feats)
 
     
 
 
 
-def write_feats():
+def write_feats(custom_feats):
 
     """ augment existing csv files with our new features and output to new dir """
 
@@ -69,6 +68,10 @@ def write_feats():
 
         cur_feats = FILE_TO_FEATS[tag]
         out_path = join(OUT_DIR, basename(fname))
+
+        
+        current_set_custom_feats = custom_feats[tag].items()
+
 
         with open(out_path, mode='w+') as out_file, open(fname, newline='') as csvfile:
 
@@ -80,14 +83,22 @@ def write_feats():
             for meta, _ in cur_feats:
                 header.append('_'.join(meta))
 
+            for meta, _ in current_set_custom_feats:
+                header.append(meta)
+
             writer.writerow(header)
 
 
             for idx, row in enumerate(reader):
                 if row:
                     row_slice = row[:8]
+
                     for _, feat in cur_feats:
                         row_slice.append(feat[idx])
+
+                    for _, feat in current_set_custom_feats:
+                        row_slice.append(feat[idx])
+
                     writer.writerow(row_slice)
 
 

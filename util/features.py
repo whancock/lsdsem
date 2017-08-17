@@ -51,8 +51,8 @@ def parse(text_files):
                     feats[name].append(func(end_one_split, end_two_split))
 
                 for name, func in SOLO_FUNCS:
-                    feats[name + '_e1'].append(func(end_one))
-                    feats[name + '_e2'].append(func(end_two))
+                    feats['e1_' + name].append(func(end_one))
+                    feats['e2_' + name].append(func(end_two))
 
         all_feats[tset] = feats
 
