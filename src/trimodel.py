@@ -11,7 +11,7 @@ class LSDTriModel:
     SENTENCE_LENGTH = 20
     EPOCH_LEARNING_RATE = .0001
     DROPOUT_KEEP_PROB_VAL = .7
-    N_FEATURES = 2 # TODO: make this dynamic
+    N_FEATURES = 5 # TODO: make this dynamic
     TRAINABLE_EMBEDDINGS = False
 
     def __init__(self, data, embedding):
@@ -28,7 +28,7 @@ class LSDTriModel:
         self.input_story_end_one = tf.placeholder(tf.int32, [None, self.SENTENCE_LENGTH])
         self.input_story_end_two = tf.placeholder(tf.int32, [None, self.SENTENCE_LENGTH])
 
-        self.input_features = tf.placeholder(tf.float32, [None, self.N_FEATURES])
+        # self.input_features = tf.placeholder(tf.float32, [None, self.N_FEATURES])
 
 
         self.input_label = tf.placeholder(tf.float32, [None, 2])
@@ -77,14 +77,17 @@ class LSDTriModel:
                 self.input_story_end_two
             )
 
-        concatenated = tf.concat([beginning_lstm, ending_lstm_one, ending_lstm_two, self.input_features], 1)
+        concatenated = tf.concat([beginning_lstm, ending_lstm_one, ending_lstm_two], 1)
+        # concatenated = tf.concat([beginning_lstm, ending_lstm_one, ending_lstm_two, self.input_features], 1)
 
 
 
         # The first multiplier "2" is because it is a bi-directional LSTM model (hence we have 2 LSTMs).
         # The second "3" is because we feed the story context and two endings * separately *, thus
         # obtaining three LSTM outputs.
-        dense_1_w = tf.get_variable('dense_1_W', shape=[self.LSTM_CELL_SIZE * 2 * 3  + self.N_FEATURES, self.LSTM_CELL_SIZE], initializer=xavier_initializer())
+        dense_1_w = tf.get_variable('dense_1_W', shape=[self.LSTM_CELL_SIZE * 2 * 3, self.LSTM_CELL_SIZE], initializer=xavier_initializer())
+        # dense_1_w = tf.get_variable('dense_1_W', shape=[self.LSTM_CELL_SIZE * 2 * 3  + self.N_FEATURES, self.LSTM_CELL_SIZE], initializer=xavier_initializer())
+        
         dense_1_b = tf.get_variable('dense_1_b', shape=[self.LSTM_CELL_SIZE], initializer=tf.constant_initializer(.1))
 
         dense_2_w = tf.get_variable('dense_2_W', shape=[self.LSTM_CELL_SIZE, 2], initializer=xavier_initializer())
@@ -117,9 +120,9 @@ class LSDTriModel:
 
     def train_batch(self, sess, examples, summary):
 
-        context, end_one, end_one_feats, end_two, end_two_feats, label = examples
+        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = examples
 
-        feats = np.concatenate((np.array(end_one_feats), np.array(end_two_feats)), axis=1)
+        feats = np.concatenate((np.array(end_one_feats), np.array(end_two_feats), np.array(shared_feats)), axis=1)
 
         return sess.run(
             [self.train, self.train_loss, self.loss_individual, summary],
@@ -129,7 +132,7 @@ class LSDTriModel:
                 self.input_story_end_one: end_one,
                 self.input_story_end_two: end_two,
                 self.input_label: label,
-                self.input_features: feats,
+                # self.input_features: feats,
                 self.dropout_keep_prob: self.DROPOUT_KEEP_PROB_VAL
             })
 
@@ -138,16 +141,16 @@ class LSDTriModel:
 
     def predict(self, sess, example):
 
-        context, end_one, end_one_feats, end_two, end_two_feats, label = example
+        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = example
 
-        feats = np.concatenate((np.array([end_one_feats]), np.array([end_two_feats])), axis=1)
+        feats = np.concatenate((np.array([end_one_feats]), np.array([end_two_feats]), np.array([shared_feats])), axis=1)
 
         return sess.run([self.dev_loss], 
             feed_dict = {
                 self.input_story_begin: [context],
                 self.input_story_end_one: [end_one],
                 self.input_story_end_two: [end_two],
-                self.input_features: feats,
+                # self.input_features: feats,
                 self.dropout_keep_prob: 1.0
             })
 

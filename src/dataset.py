@@ -33,10 +33,6 @@ class RocDataset:
         self.dev_data = test_data # [:dev_pivot]
 
 
-
-
-
-
         # build a tensor that maps words in our data to indices
         self.corpus = self.train_data + self.dev_data
         self.corpus_freq = self.build_freq_dict()
@@ -99,7 +95,15 @@ class RocDataset:
 
             label = [1,0] if story.ending_idx==0 else [0,1]
 
-            examples.append((context_embedded, ending_one_embedded, story.get_end_one_feats(), ending_two_embedded, story.get_end_two_feats(), label))
+            examples.append((
+                context_embedded, 
+                ending_one_embedded, 
+                story.get_end_one_feats(), 
+                ending_two_embedded, 
+                story.get_end_two_feats(),
+                story.get_shared_feats(),
+                label
+                ))
 
         return examples
 
@@ -151,6 +155,7 @@ class RocDataset:
 
                 end_one_feats = []
                 end_two_feats = []
+                shared_feats = []
 
                 if len(row) > 8:
                     for idx in range(8, len(header)):
@@ -158,10 +163,20 @@ class RocDataset:
                             end_one_feats.append(float(row[idx]))
                         elif 'e2' in header[idx]:
                             end_two_feats.append(float(row[idx]))
+                        else:
+                            shared_feats.append(float(row[idx]))
 
                 end_feats = (end_one_feats, end_two_feats)
 
-                stories.append(Story(story_id, sentences, potential_endings, end_feats, correct_ending_idx))
+                stories.append(
+                    Story(
+                        story_id, 
+                        sentences, 
+                        potential_endings, 
+                        end_feats,
+                        shared_feats,
+                        correct_ending_idx
+                        ))
 
 
         return stories

@@ -101,7 +101,7 @@ class Governor:
 
             predict, = self.model.predict(sess, example)
 
-            label = example[5]
+            label = example[6]
             prediction = 0 if predict[0][0] > predict[0][1] else 1
 
             if prediction == label[1]:
@@ -128,6 +128,6 @@ class Governor:
         """
         batch_indices = indices[batch_idx * self.BATCHSIZE: (batch_idx + 1) * self.BATCHSIZE]
         data = [examples[i] for i in batch_indices]
-        context, end_one, end_one_feats, end_two, end_two_feats, label = zip(*data)
+        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = zip(*data)
 
-        return context, end_one, end_one_feats, end_two, end_two_feats, label
+        return context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label
