@@ -11,7 +11,7 @@ class UKPModel:
     SENTENCE_LENGTH = 20
     EPOCH_LEARNING_RATE = .0001
     DROPOUT_KEEP_PROB_VAL = .7
-    N_FEATURES = 2 # TODO: make this dynamic
+    N_FEATURES = 1 # TODO: make this dynamic
     TRAINABLE_EMBEDDINGS = False
 
     def __init__(self, data, embedding):
@@ -25,7 +25,7 @@ class UKPModel:
 
         self.input_story_begin = tf.placeholder(tf.int32, [None, self.SENTENCE_LENGTH * 4], name='context')
         self.input_story_end = tf.placeholder(tf.int32, [None, self.SENTENCE_LENGTH], name='end')
-        self.input_features = tf.placeholder(tf.float32, [None, self.N_FEATURES], name='feats')
+        # self.input_features = tf.placeholder(tf.float32, [None, self.N_FEATURES], name='feats')
         self.input_label = tf.placeholder(tf.int32, [None, 2], name='label')
         self.dropout_keep_prob = tf.placeholder(tf.float32)
         self.learning_rate = tf.placeholder(tf.float32, shape=[])
@@ -73,7 +73,8 @@ class UKPModel:
             self.dropout_keep_prob
         )
 
-        concatenated = tf.concat([beginning_lstm, ending_lstm, self.input_features], 1)
+        concatenated = tf.concat([beginning_lstm, ending_lstm], 1)
+        # concatenated = tf.concat([beginning_lstm, ending_lstm, self.input_features], 1)
 
 
 
@@ -85,7 +86,10 @@ class UKPModel:
         # obtaining two outputs from the LSTM.
 
 
-        self.dense_1_W = tf.get_variable('dense_1_W', shape=[self.LSTM_CELL_SIZE * 2 * 2 + self.N_FEATURES, self.LSTM_CELL_SIZE], initializer=xavier_initializer())
+        self.dense_1_W = tf.get_variable('dense_1_W', shape=[self.LSTM_CELL_SIZE * 2 * 2, self.LSTM_CELL_SIZE], initializer=xavier_initializer())
+        # self.dense_1_W = tf.get_variable('dense_1_W', shape=[self.LSTM_CELL_SIZE * 2 * 2 + self.N_FEATURES, self.LSTM_CELL_SIZE], initializer=xavier_initializer())
+        
+        
         self.dense_1_b = tf.get_variable('dense_1_b', shape=[self.LSTM_CELL_SIZE], initializer=tf.constant_initializer(.1))
 
         self.dense_2_W = tf.get_variable('dense_2_W', shape=[self.LSTM_CELL_SIZE, 2], initializer=xavier_initializer())
@@ -116,10 +120,9 @@ class UKPModel:
     def train_batch(self, sess, examples, summary):
 
         # TODO: this data needs to be split into two training examples
+        context, end_one, end_one_feats, label = zip(*examples)
 
-        context, end_one, end_one_feats, end_two, end_two_feats, label = examples
-
-        feats = np.concatenate((np.array(end_one_feats), np.array(end_two_feats)), axis=1)
+        # feats = np.concatenate((np.array(end_one_feats), np.array(end_two_feats)), axis=1)
 
         return sess.run(
             [self.train, self.loss, self.loss_individual, summary],
@@ -128,7 +131,7 @@ class UKPModel:
                 self.input_story_begin: context,
                 self.input_story_end: end_one,
                 self.input_label: label,
-                self.input_features: feats,
+                # self.input_features: end_one_feats,
                 self.dropout_keep_prob: self.DROPOUT_KEEP_PROB_VAL
             })
 
@@ -137,28 +140,12 @@ class UKPModel:
 
     def predict(self, sess, example):
 
-        context, end_one, end_one_feats, end_two, end_two_feats, label = example
-
-
-        print("context shape", np.array([context]).shape)
-        print("end_one_shape", np.array([end_one]).shape)
-        print("end_one_feats_shape", np.array([end_one_feats]).shape)
-
-        print("end_two_shape", np.array([end_two]).shape)
-        print("end_two_feats_shape", np.array([end_two_feats]).shape)
-
-        print("labels shape", np.array([label]).shape)
-
-
-
-        feats = np.concatenate((np.array([end_one_feats]), np.array([end_two_feats])), axis=1)
-
-        print('feats shape', feats.shape)
+        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = example
 
         return sess.run([self.dev_loss], feed_dict = {
-            self.input_story_begin: [context],
+            self.input_story_begin: [context] * 2,
             self.input_story_end: [end_one, end_two],
-            self.input_features: feats,
+            # self.input_features: feats,
             self.dropout_keep_prob: 1.0
         })
 

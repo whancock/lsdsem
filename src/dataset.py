@@ -25,12 +25,26 @@ class RocDataset:
         test_data = self.parse_csv(self.test_path)
         
 
+        print("ORIG TRAIN SIZE", len(dev_data))
+        print("ORIG DEV SIZE", len(test_data))
+
+
+        dev_pivot = int(len(dev_data) * .85)
+        dev_for_train = test_data[:dev_pivot]
+        dev_for_dev = test_data[dev_pivot:]
+
+
+
         # take a subset of train
         # train_pivot = int(len(train_data) * .05)
-        self.train_data = dev_data # [:train_pivot]
+        self.train_data = dev_for_train
 
         # dev_pivot = int(len(dev_data) * .1)
-        self.dev_data = test_data # [:dev_pivot]
+        self.dev_data = dev_for_dev # [:dev_pivot]
+
+
+        print("TRAIN SIZE:", len(self.train_data))
+        print("DEV SIZE:", len(self.dev_data))
 
 
         # build a tensor that maps words in our data to indices

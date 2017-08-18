@@ -128,6 +128,7 @@ class Governor:
         """
         batch_indices = indices[batch_idx * self.BATCHSIZE: (batch_idx + 1) * self.BATCHSIZE]
         data = [examples[i] for i in batch_indices]
-        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = zip(*data)
+        # context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = zip(*data)
+        # return context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label
 
-        return context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label
+        return data
