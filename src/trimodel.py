@@ -120,7 +120,7 @@ class LSDTriModel:
 
     def train_batch(self, sess, examples, summary):
 
-        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = examples
+        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = zip(*examples)
 
         feats = np.concatenate((np.array(end_one_feats), np.array(end_two_feats), np.array(shared_feats)), axis=1)
 

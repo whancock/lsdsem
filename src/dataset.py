@@ -30,8 +30,8 @@ class RocDataset:
 
 
         dev_pivot = int(len(dev_data) * .85)
-        dev_for_train = test_data[:dev_pivot]
-        dev_for_dev = test_data[dev_pivot:]
+        dev_for_train = dev_data[:dev_pivot]
+        dev_for_dev = dev_data[dev_pivot:]
 
 
 
@@ -42,13 +42,15 @@ class RocDataset:
         # dev_pivot = int(len(dev_data) * .1)
         self.dev_data = dev_for_dev # [:dev_pivot]
 
+        self.test_data = test_data
+
 
         print("TRAIN SIZE:", len(self.train_data))
         print("DEV SIZE:", len(self.dev_data))
 
 
         # build a tensor that maps words in our data to indices
-        self.corpus = self.train_data + self.dev_data
+        self.corpus = self.train_data + self.dev_data + self.test_data
         self.corpus_freq = self.build_freq_dict()
 
 

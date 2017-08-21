@@ -38,23 +38,34 @@ def run():
     embedding = WVEmbedding(data)
 
 
-
+    # tri model (context and endings encoded individually)
+    # train_examples = data.get_dev_repr(embedding, data.train_data)
+    # dev_examples = data.get_dev_repr(embedding, data.dev_data)
     # model = LSDTriModel(data, embedding)
 
 
-
-    train_examples = data.get_good_bad_split(embedding, data.train_data)
+    # lsd model (separate context lstms share weights with each ending)
     # train_examples = data.get_dev_repr(embedding, data.train_data)
+    # dev_examples = data.get_dev_repr(embedding, data.dev_data)
+    # model = LSDModel(data, embedding)
+
+
+    # ukp model
+    train_examples = data.get_good_bad_split(embedding, data.train_data)
     dev_examples = data.get_dev_repr(embedding, data.dev_data)
-    # test_examples = data.get_dev_repr(embedding, data.test_data)
+    model = UKPModel(data, embedding)
+
+
+
+    test_examples = data.get_dev_repr(embedding, data.test_data)
+
 
     logger.info('training on {} examples'.format(len(train_examples)))
     logger.info('validating on {} examples'.format(len(dev_examples)))
 
-    model = UKPModel(data, embedding)
     governor = Governor(logger, model)
     governor.train_model(train_examples, dev_examples)
-    # governor.test_model(test_examples)
+    governor.test_model(test_examples)
 
 
 

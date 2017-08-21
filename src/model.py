@@ -1,3 +1,5 @@
+import numpy as np
+
 import tensorflow as tf
 from tensorflow.python.ops import rnn_cell
 from tensorflow.contrib.layers import xavier_initializer
@@ -9,6 +11,9 @@ class LSDModel:
     LSTM_CELL_SIZE = 141
     SENTENCE_LENGTH = 20
     TRAINABLE_EMBEDDINGS = False
+    EPOCH_LEARNING_RATE = .0001
+    DROPOUT_KEEP_PROB_VAL = .7
+    N_FEATURES = 5 # TODO: make this dynamic
 
     def __init__(self, data, embedding):
 
@@ -151,6 +156,51 @@ class LSDModel:
         self.learning_rate = tf.placeholder(tf.float32, shape=[])
         optimizer = tf.train.AdamOptimizer(self.learning_rate)
         self.train = optimizer.minimize(self.train_loss)
+
+
+
+
+
+
+    def train_batch(self, sess, examples, summary):
+
+        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = zip(*examples)
+
+        # feats = np.concatenate((np.array(end_one_feats), np.array(end_two_feats), np.array(shared_feats)), axis=1)
+
+        return sess.run(
+            [self.train, self.train_loss, self.loss_individual, summary],
+            feed_dict={
+                self.learning_rate: self.EPOCH_LEARNING_RATE,
+                self.input_story_begin: context,
+                self.input_story_begin_two: context,
+                self.input_story_end: end_one,
+                self.input_story_end_two: end_two,
+                self.input_label: label,
+                # self.input_features: feats,
+                self.dropout_keep_prob: self.DROPOUT_KEEP_PROB_VAL
+            })
+
+
+
+
+    def predict(self, sess, example):
+
+        context, end_one, end_one_feats, end_two, end_two_feats, shared_feats, label = example
+
+        feats = np.concatenate((np.array([end_one_feats]), np.array([end_two_feats]), np.array([shared_feats])), axis=1)
+
+        return sess.run([self.dev_loss], 
+            feed_dict = {
+                self.input_story_begin: [context],
+                self.input_story_begin_two: [context],
+                self.input_story_end: [end_one],
+                self.input_story_end_two: [end_two],
+                # self.input_features: feats,
+                self.dropout_keep_prob: 1.0
+            })
+
+
 
 
 
